@@ -13,7 +13,7 @@ fileNum = 3
 precision = 3
 dir = os.path.dirname(__file__)
 
-# Plot Reward History
+# Plot the responding time & inner server time
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(48, 15), dpi=80)
 fig.suptitle(f'Responding Time for Each Thread')
 
@@ -23,6 +23,7 @@ for i, id, color in zip(threadNum, threadIds, threadColors):
     # print(data[i][' Sever InnerTime'].isnull().sum())
     # print(data[i].head)
 
+    # Calculate responding time mean, STD, PR99
     rtMean = round(np.mean(data[i]['AvgMeanTime(ms)']), precision)
     rtStd = round(np.std(data[i]['AvgMeanTime(ms)']), precision)
     rtPr99 = round(np.percentile(data[i]['AvgMeanTime(ms)'], 99), precision)
@@ -30,6 +31,7 @@ for i, id, color in zip(threadNum, threadIds, threadColors):
     print(rtMsg)
     ax1.plot(data[i]['AvgMeanTime(ms)'], label = rtMsg, color = color)
 
+    # Calculate inner server time mean, STD, PR99
     sitMean = round(np.mean(data[i][' Sever InnerTime']), precision)
     sitStd = round(np.std(data[i][' Sever InnerTime']), precision)
     sitPr99 = round(np.percentile(data[i][' Sever InnerTime'], 99, axis = 0), precision)
