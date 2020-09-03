@@ -17,6 +17,10 @@ dataT10 = pd.read_csv("avgMean/Thread-10.csv")
 print(dataT10.head)
 dataT11 = pd.read_csv("avgMean/Thread-11.csv") 
 print(dataT11.head)
+
+rtMeanT9 = np.mean(dataT9['AvgMeanTime(ms)'])
+rtStdT9 = np.std(dataT9['AvgMeanTime(ms)'])
+print(f'Thread 9: Responding Time Moving Avg {rtMeanT9} | Std {rtStdT9}')
 # print(type(dataT9))
 # print(data['AvgMeanTime(ms)'])
 # with open(f'avgMean/Thread-9.csv', 'r') as file:
