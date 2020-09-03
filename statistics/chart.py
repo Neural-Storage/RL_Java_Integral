@@ -26,14 +26,14 @@ for i, id, color in zip(threadNum, threadIds, threadColors):
     rtMean = round(np.mean(data[i]['AvgMeanTime(ms)']), precision)
     rtStd = round(np.std(data[i]['AvgMeanTime(ms)']), precision)
     rtPr99 = round(np.percentile(data[i]['AvgMeanTime(ms)'], 99), precision)
-    rtMsg = f'Thread {id} Responding Time Moving Avg: {rtMean} | Std: {rtStd} | Slowest 99%: {rtPr99}'
+    rtMsg = f'Thread {id} Responding Time Moving Avg: {rtMean} | Std: {rtStd} | Slowest 99%: {rtPr99}(ms)'
     print(rtMsg)
     ax1.plot(data[i]['AvgMeanTime(ms)'], label = rtMsg, color = color)
 
     sitMean = round(np.mean(data[i][' Sever InnerTime']), precision)
     sitStd = round(np.std(data[i][' Sever InnerTime']), precision)
     sitPr99 = round(np.percentile(data[i][' Sever InnerTime'], 99, axis = 0), precision)
-    sitMsg = f'Thread {id} Server Inner Time Moving Avg: {sitMean} | Std: {sitStd} | Slowest 99%: {sitPr99}'
+    sitMsg = f'Thread {id} Server Inner Time Moving Avg: {sitMean} | Std: {sitStd} | Slowest 99%: {sitPr99}(ms)'
     print(sitMsg)
     ax2.plot(data[i][' Sever InnerTime'], label = sitMsg, color = color)
 

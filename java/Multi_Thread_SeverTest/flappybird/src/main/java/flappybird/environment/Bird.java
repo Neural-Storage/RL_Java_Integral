@@ -25,7 +25,8 @@ public class Bird {
 	public void init(Position initPos) {
 		posX = initPos.x;
 		posY = initPos.y;
-		flapped = true;
+		flapped = false;
+		velocity = 0.0;
 	}
 
 	private void oscillateStartPosY() {
