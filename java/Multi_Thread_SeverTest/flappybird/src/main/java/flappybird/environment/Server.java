@@ -254,6 +254,7 @@ class ClientHandler extends Thread{
         				is_done = true;
         				step = 1;
         				cumulativeReward = 0.0;
+        				action_reward = 0.0;
         			}
         			//Process State info
         			outStr = String.format("{\"state\": [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f], ",
