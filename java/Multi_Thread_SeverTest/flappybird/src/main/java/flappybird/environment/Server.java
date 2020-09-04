@@ -100,10 +100,14 @@ class ClientHandler extends Thread{
         String outStr = "";
         final int state_size = 8;
         final int action_size = 2;
+        double action_reward = 0.0;
         //Elapsed Timer
         long start = 0, stop = 0;
+        long current = 0;
+        /*
         long avgMean = 0, innerAvgMean = 0, current = 0;
         double avgMeanInSec = 0.0, innerAvgMeanInSec = 0.0;
+        */
         //File Manage
         int action_count = 0;
         String folderName = "./avgMean";
@@ -124,8 +128,8 @@ class ClientHandler extends Thread{
         String csvName = "./avgMean/" + threadID +".csv";
         String csvName1000 = "./avgMean/" + threadID +"_1000.csv";
         try {
-        	Files.write(Paths.get(csvName), "AvgMeanTime(ms), Sever InnerTime\n".getBytes());
-        	Files.write(Paths.get(csvName1000), "AvgMeanTime/1000 act (ms), Sever InnerTime\n".getBytes());
+        	Files.write(Paths.get(csvName), "Transmission Mean Time(ms), Sever InnerTime(ms)\n".getBytes());
+        	Files.write(Paths.get(csvName1000), "Transmission Mean Time/1000 acts (ms), Sever InnerTime(ms)\n".getBytes());
         }
         catch (IOException e) {
 			e.printStackTrace();
@@ -140,10 +144,14 @@ class ClientHandler extends Thread{
         		stop = System.nanoTime();
         		if(start != 0)
         			current = stop - start;
+        		/*
             	avgMean = current/20 + avgMean*19/20;
             	avgMeanInSec = (double) avgMean/1000000;
             	//System.out.println(avgMeanInSec + "s");
             	String fout = avgMeanInSec + ",";
+            	*/
+        		double cur2double = (double) current/1000000;
+        		String fout = cur2double + ",";
             	Files.write(Paths.get(csvName), fout.getBytes(), StandardOpenOption.APPEND);
             	if(action_count++ >= 1000){
             		Files.write(Paths.get(csvName1000), fout.getBytes(), StandardOpenOption.APPEND);
@@ -208,9 +216,15 @@ class ClientHandler extends Thread{
         			if(!env.gameOver()) {
         				int act = inputJSON.getInt("action");
         				if( Integer.compare(act, 0) == 0 )
-        					cumulativeReward += env.act(Action.FLAP);
-        				else
-        					cumulativeReward += env.act(Action.NONE);
+        				{
+        					action_reward = env.act(Action.FLAP);
+        					cumulativeReward += action_reward;
+        				}
+        					
+        				else {
+        					action_reward = env.act(Action.NONE);
+        					cumulativeReward += action_reward;
+        				}
         				
         				if (cumulativeReward > Max_Reward) {
         					Max_Reward = cumulativeReward;
@@ -246,7 +260,7 @@ class ClientHandler extends Thread{
         					states.get(0),states.get(1),states.get(2),states.get(3),
         					states.get(4),states.get(5),states.get(6),states.get(7)
         					);
-        			String temp_reward = String.format("\"reward\": %.3f, ",cumulativeReward);
+        			String temp_reward = String.format("\"reward\": %.3f, ",action_reward);
         			String temp_done = is_done ? "\"is_done\": \"True\"," : "\"is_done\": \"False\", ";
         			String temp_info = "\"info\": \"none\"}";
         			outStr += temp_reward;
@@ -267,12 +281,15 @@ class ClientHandler extends Thread{
         		default:
         			break;
         		}
+        	/*
         	innerAvgMean = (start - stop)/20 + innerAvgMean*19/20;
         	innerAvgMeanInSec = (double) innerAvgMean/1000000;
+        	*/
+        	double fout = (double) (start - stop)/1000000;
         	try {
-        		Files.write(Paths.get(csvName), (innerAvgMeanInSec +"\n").getBytes(), StandardOpenOption.APPEND);
+        		Files.write(Paths.get(csvName), (fout +"\n").getBytes(), StandardOpenOption.APPEND);
             	if(action_count++ >= 1000){
-            		Files.write(Paths.get(csvName1000), (innerAvgMeanInSec +"\n").getBytes(), StandardOpenOption.APPEND);
+            		Files.write(Paths.get(csvName1000), (fout +"\n").getBytes(), StandardOpenOption.APPEND);
             		action_count = 0;
             	}
         	}

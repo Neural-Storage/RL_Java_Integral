@@ -123,7 +123,7 @@ public class Environment {
 
 			// player pass the pillar
 			if ((p.posX() - p.width() / 2) <= bird.posX() && bird.posX() < (p.posX() - p.width() / 2 + 4)) {
-				score += Reward.POSITIVE.value();
+				score = Reward.POSITIVE.value();
 			}
 
 			// is it out of the screen?
@@ -148,7 +148,7 @@ public class Environment {
 		}
 
 		if (lives <= 0) {
-			score += Reward.LOSS.value();
+			score = Reward.LOSS.value();
 		}
 	}
 
