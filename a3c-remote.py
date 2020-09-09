@@ -3,11 +3,49 @@ import os
 import ctypes
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.pylab import figure
 # import tensorflow.compat.v1 as tfv1
 import models.A2C as A2C
 import envs.cartPole as cartPole
 import envs.remote as remote
 import envs.flappyBird as flappyBird
+
+def drawChart(episode_results):
+    # Calculate average reward
+    r_his = []
+    loss_his = [] 
+    worker_his = []
+    avg_r_his = []
+    r_last = 0
+    for res in episode_results:
+        r_his.append(res['reward'])
+        loss_his.append(res['loss'])
+        worker_his.append(res['worker_id'])
+
+        r_last = 0.95 * r_last + res['reward'] * 0.05
+        avg_r_his.append(r_last)
+
+    # Plot Reward History
+    # figure(num=None, figsize=(24, 6), dpi=80)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 6), dpi=80)
+    fig.suptitle(f'Remote A3C Result')
+    # x_datas = range(0, len(r_his))
+    # avg_x_datas = range(0, EPISODE_NUM + 1, PRINT_EVERY_EPISODE)
+
+    ax1.plot(r_his, color='blue')
+    ax1.plot(avg_r_his, color='red')
+    ax1.set_xlabel('Episodes')
+    ax1.set_ylabel('Reward / Episode')
+    ax1.grid()
+
+    ax2.plot(loss_his, color='orange')
+    ax2.set_xlabel('Episodes')
+    ax2.set_ylabel('Loss / Episode')
+    ax2.grid()
+
+    plt.savefig('Remote-A3C-res.svg')
+    plt.savefig('Remote-A3C-res.png')
 
 class Master:
     def __init__(self):
@@ -66,8 +104,9 @@ class Master:
 
             while ((not global_grad_queue.empty()) or (global_alive_workers.value > 0)):
     #             print(f'Getting gradients from queue')
-                item = global_grad_queue.get()
-                global_agent.update(loss = item['loss'], gradients = item['gradients'])
+                if not global_grad_queue.empty():
+                    item = global_grad_queue.get()
+                    global_agent.update(loss = item['loss'], gradients = item['gradients'])
 
                 weights = global_agent.model.get_weights()
                 for i in range(len(global_var_queues)):
@@ -97,8 +136,8 @@ class Master:
 
                 return model
 
-        env = remote.RemoteEnv()
-        # env = cartPole.CartPoleEnv()
+        # env = remote.RemoteEnv()
+        env = cartPole.CartPoleEnv()
         # env = flappyBird.FlappyBirdEnv()
         NUM_STATE_FEATURES = env.get_num_state_features()
         NUM_ACTIONS = env.get_num_actions()
@@ -131,19 +170,19 @@ class Master:
 
     # def is_having_training_info(self):
     #     return ((not global_res_queue.empty()) or (global_alive_workers.value > 0))
-    def get_res(self, global_res_queue, global_alive_workers):
-        if ((not global_res_queue.empty()) or (global_alive_workers.value > 0)):
-            return global_res_queue.get()
-        else:
-            return None
+    # def get_res(self, global_res_queue, global_alive_workers):
+    #     if ((not global_res_queue.empty()) or (global_alive_workers.value > 0)):
+    #         return global_res_queue.get()
+    #     else:
+    #         return None
 
-    def start(self):
+    def start(self, episode_num, ps_num, worker_num):
         # print(tf.config.experimental.list_physical_devices(device_type=None))
         # print(tf.config.experimental.list_logical_devices(device_type=None))
 
-        self.episode_num = 1000
-        self.ps_num = 1
-        self.worker_num = 3
+        self.episode_num = episode_num
+        self.ps_num = ps_num
+        self.worker_num = worker_num
         self.current_episode = 1
         global_remain_episode = Value('i', self.episode_num)
         global_alive_workers = Value('i', self.worker_num)
@@ -172,11 +211,14 @@ class Master:
 
         while ((not global_res_queue.empty()) or (global_alive_workers.value > 0)):
             if not global_res_queue.empty():
-                episode_results.append(global_res_queue.get())
-                episode_res = episode_results.pop(0)
+                episode_res = global_res_queue.get()
+                episode_results.append(episode_res)
+                #  = episode_results.pop(0)
                 print(f"Episode {self.current_episode} Reward with worker {episode_res['worker_id']}: {episode_res['reward']}\t| Loss: {episode_res['loss']}")
                 self.current_episode += 1
-            
+        
+        drawChart(episode_results)
+
         global_grad_queue.close()
         global_grad_queue.join_thread()
 
@@ -200,4 +242,4 @@ if __name__ == '__main__':
     # print(tf.config.experimental.list_logical_devices(device_type=None))
 
     m = Master()
-    m.start()
+    m.start(100, 1, 3)
