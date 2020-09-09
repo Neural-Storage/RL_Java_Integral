@@ -16,7 +16,7 @@ public class Environment {
 	public static final int WIDTH = 288;
 	public static final int HEIGHT = 512;
 	public static final int PILLAR_GAP = 100;
-	public static final Random r = new Random();
+	public static final Random r = new Random(88888);
 
 	private int lives;
 	private double score;
@@ -106,6 +106,7 @@ public class Environment {
 	}
 
 	private void step(Action action) {
+		score = 0;
 		if (action == Action.FLAP) {
 			bird.flap();
 		}
