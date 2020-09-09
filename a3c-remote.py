@@ -136,8 +136,8 @@ class Master:
 
                 return model
 
-        # env = remote.RemoteEnv()
-        env = cartPole.CartPoleEnv()
+        env = remote.RemoteEnv()
+        # env = cartPole.CartPoleEnv()
         # env = flappyBird.FlappyBirdEnv()
         NUM_STATE_FEATURES = env.get_num_state_features()
         NUM_ACTIONS = env.get_num_actions()
@@ -242,4 +242,4 @@ if __name__ == '__main__':
     # print(tf.config.experimental.list_logical_devices(device_type=None))
 
     m = Master()
-    m.start(100, 1, 3)
+    m.start(30000, 1, 3)
