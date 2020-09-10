@@ -10,8 +10,12 @@ import models.A2C as A2C
 import envs.cartPole as cartPole
 import envs.remote as remote
 import envs.flappyBird as flappyBird
+import models.util as util
 
-def drawChart(episode_results):
+LEARNING_RATE = 0.00001
+DIR = os.path.dirname(__file__)
+
+def drawChart(episode_results, worker_num):
     # Calculate average reward
     r_his = []
     loss_his = [] 
@@ -28,8 +32,8 @@ def drawChart(episode_results):
 
     # Plot Reward History
     # figure(num=None, figsize=(24, 6), dpi=80)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 6), dpi=80)
-    fig.suptitle(f'Remote A3C Result')
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(48, 6), dpi=80)
+    fig.suptitle(f'Remote A3C Result with {worker_num} Workers & LR {LEARNING_RATE}')
     # x_datas = range(0, len(r_his))
     # avg_x_datas = range(0, EPISODE_NUM + 1, PRINT_EVERY_EPISODE)
 
@@ -43,9 +47,9 @@ def drawChart(episode_results):
     ax2.set_xlabel('Episodes')
     ax2.set_ylabel('Loss / Episode')
     ax2.grid()
-
-    plt.savefig('Remote-A3C-res.svg')
-    plt.savefig('Remote-A3C-res.png')
+    
+    plt.savefig(os.path.join(DIR, 'statistics', 'temp', f'Remote-A3C-res-w{worker_num}.svg'))
+    plt.savefig(os.path.join(DIR, 'statistics', 'temp', f'Remote-A3C-res-w{worker_num}.png'))
 
 class Master:
     def __init__(self):
@@ -124,7 +128,7 @@ class Master:
     def init_agent_env(self, proc_id, role, role_id):
         class Agent(A2C.Agent):
             def build_model(self, name):
-                randUni = tf.keras.initializers.RandomUniform(minval=-0.05, maxval=0.05, seed=None)
+#                 randUni = tf.keras.initializers.RandomUniform(minval=-0.05, maxval=0.05, seed=None)
                 inputs = tf.keras.layers.Input(shape=self.state_size, name = 'inputs')
                 # gru = tf.keras.layers.GRU(128, activation = 'tanh')(inputs)
                 common = tf.keras.layers.Dense(128, activation="relu")(inputs)
@@ -136,17 +140,17 @@ class Master:
 
                 return model
 
-        env = remote.RemoteEnv()
-        # env = cartPole.CartPoleEnv()
+        # env = remote.RemoteEnv()
+        env = cartPole.CartPoleEnv()
         # env = flappyBird.FlappyBirdEnv()
         NUM_STATE_FEATURES = env.get_num_state_features()
         NUM_ACTIONS = env.get_num_actions()
         PRINT_EVERY_EPISODE = 20
-        LEARNING_RATE = 0.0001
+#         LEARNING_RATE = 0.03
         REWARD_DISCOUNT = 0.99
         COEF_VALUE= 1
         COEF_ENTROPY = 0
-        # agent = A2C.Agent((NUM_STATE_FEATURES, ), NUM_ACTIONS, REWARD_DISCOUNT, LEARNING_RATE, COEF_VALUE, COEF_ENTROPY)
+#         agent = A2C.Agent((NUM_STATE_FEATURES, ), NUM_ACTIONS, REWARD_DISCOUNT, LEARNING_RATE, COEF_VALUE, COEF_ENTROPY)
         agent = Agent((NUM_STATE_FEATURES, ), NUM_ACTIONS, REWARD_DISCOUNT, LEARNING_RATE, COEF_VALUE, COEF_ENTROPY)
 
         return agent, env
@@ -209,15 +213,31 @@ class Master:
         for num in range(self.worker_num):
             workers[num].start()
 
+        r_his = []
+        loss_his = [] 
+        worker_his = []
+        avg_r_his = [0]
+
+        writer = util.Writer(os.path.join(DIR, 'statistics', 'temp', 'CartPole-A3C-res-w.csv'))
+        writer.set_header(['reward', 'avg_reward', 'loss'])
+
         while ((not global_res_queue.empty()) or (global_alive_workers.value > 0)):
             if not global_res_queue.empty():
                 episode_res = global_res_queue.get()
                 episode_results.append(episode_res)
-                #  = episode_results.pop(0)
+                
+                episode_avg_reward = 0.05 * episode_res['reward'] + 0.95 * avg_r_his[-1]
+                r_his.append(episode_res['reward'])
+                loss_his.append(episode_res['loss'])
+                worker_his.append(episode_res['worker_id'])
+                avg_r_his.append(episode_avg_reward)
+                
+                writer.write_row([episode_res['reward'], round(episode_avg_reward, 3), episode_res['loss'].numpy()])
+
                 print(f"Episode {self.current_episode} Reward with worker {episode_res['worker_id']}: {episode_res['reward']}\t| Loss: {episode_res['loss']}")
                 self.current_episode += 1
         
-        drawChart(episode_results)
+        drawChart(episode_results, worker_num)
 
         global_grad_queue.close()
         global_grad_queue.join_thread()
@@ -242,4 +262,9 @@ if __name__ == '__main__':
     # print(tf.config.experimental.list_logical_devices(device_type=None))
 
     m = Master()
-    m.start(30000, 1, 3)
+    m.start(100, 1, 2)
+
+    
+    # writer.write_row([1, 2, 3])
+    # writer.write_batch([[3, 2, 1], [4, 5, 6]])
+    # writer.close()

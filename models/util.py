@@ -1,3 +1,5 @@
+import os
+import csv
 import tensorflow as tf
 
 def test_gpu():
@@ -15,3 +17,30 @@ def test_gpu():
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(e)
+
+class Writer:
+    def __init__(self, path):
+        self.path = path
+        self.file = open(path, 'w', newline = '')
+        self.writer = csv.writer(self.file, delimiter = ',', quotechar = '|', quoting = csv.QUOTE_MINIMAL)
+
+        self.is_set_header = False
+
+    def set_header(self, headers):
+        # with open(self.path, 'w', newline = '') as file:
+            # writer = csv.writer(file, delimiter = ',', quotechar = '|', quoting = csv.QUOTE_MINIMAL)
+        self.writer.writerow(headers)
+
+    def write_batch(self, rows):
+        # with open(self.path, 'w', newline = '') as file:
+            # writer = csv.writer(file, delimiter = ',', quotechar = '|', quoting = csv.QUOTE_MINIMAL)
+        for row in rows:
+            self.writer.writerow(row)
+    
+    def write_row(self, row):
+        # with open(self.path, 'w', newline = '') as file:
+            # writer = csv.writer(file, delimiter = ',', quotechar = '|', quoting = csv.QUOTE_MINIMAL)
+        self.writer.writerow(row)
+
+    def close(self):
+        self.file.close()
